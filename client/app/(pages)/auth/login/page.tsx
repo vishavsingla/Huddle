@@ -13,9 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useDispatch } from 'react-redux';
+import { setSessionToken } from '../../../redux/sessionTokenSlice';
+
 import axios from "axios";
 
 export default function CardWithForm() {
+    const dispatch = useDispatch();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -29,11 +33,12 @@ export default function CardWithForm() {
                 email,
                 password,
             });
-            console.log(response);
             if(response.status!=200){
                 setError(response.data.message)
             }
             else{
+                console.log(response.data.session)
+                dispatch(setSessionToken(response.data.session.sessionToken)); 
                 router.push("/");
                 setEmail('');
                 setError('');
@@ -49,7 +54,7 @@ export default function CardWithForm() {
             }
         }
     };
-    
+
     return (
         <Card className="w-[400px]">
             <CardHeader>
