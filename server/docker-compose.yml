@@ -13,7 +13,7 @@ services:
   #   environment:
   #     - DATABASE_URL="postgresql://postgres:123@db:5432/capstone?schema=public"
   db:
-    container_name: db
+    container_name: huddle-db
     image: postgres:15
     restart: always
     environment:
