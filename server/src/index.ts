@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
-import AuthRoter from "./routers/AuthRouter";
+import AuthRouter from "./routers/AuthRouter";
+import cors from "cors";
 
 dotenv.config();
 
@@ -9,7 +10,16 @@ const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
-app.use('/auth/user',AuthRoter);
+const corsOptions ={
+  origin:['http://localhost:3000'], 
+  credentials:true,         
+  optionSuccessStatus:200
+}
+
+app.use(cors(corsOptions));
+
+
+app.use('/auth/user',AuthRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express ts Server");
