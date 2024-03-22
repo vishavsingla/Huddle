@@ -1,22 +1,22 @@
 ##Backend in Typescript initiate commands
 
-npm init -y
-npm i express dotenv
-npm i -D typescript @types/express @types/node
-npx tsc --init
+- npm init -y
+- npm i express dotenv
+- npm i -D typescript @types/express @types/node
+- npx tsc --init
 
-"outDir": "./dist"
+- "outDir": "./dist"
 
-npx ts-node src/index.ts
-npm i -D nodemon ts-node
+- npx ts-node src/index.ts
+- npm i -D nodemon ts-node
 
-"scripts": {
+- "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts"
   }
 
-nodemon.json
+- nodemon.json
 {
   "watch": ["src"],
   "ext": "ts",
