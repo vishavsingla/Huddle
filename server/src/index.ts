@@ -2,11 +2,35 @@ import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import AuthRouter from "./routers/AuthRouter";
 import cors from "cors";
+import { Server } from "socket.io";
+import {ServerResponse, createServer} from "http"; // Import the http module
+const port = process.env.PORT || 5001;
 
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT || 3001;
+const httpServer = createServer(app); // Create an http.Server instance using the Express app
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+io.on("connection",(socket)=>{
+  console.log("User Connected", socket.id);
+
+  socket.on("message",(data)=>{
+    console.log(data);
+  })
+
+  socket.on("disconnect",()=>{
+    console.log("User Disconnected", socket.id);
+  })
+})
+
 
 app.use(express.json());
 
@@ -25,7 +49,10 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Express ts Server");
 });
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`[server]: Server is running at http://localhost:${port}`);
+// });
 
+httpServer.listen(port, () => {
+  console.log(`Server is running on ${port}`);
+});

@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,22 +8,35 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  hashedPassword String
-  access_token   String?
-  refresh_token  String?
-  expires_at     Int?
-  token_type     String?
-  scope          String?
-  id_token       String?
-  session_state  String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  sessions       Session[]
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String?             @unique
+  emailVerified      DateTime?
+  hashedPassword     String
+  access_token       String?
+  refresh_token      String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
   verificationTokens Verificationtoken[]
+  posts              Post[]
+  comments           Comment[]
+  messages           Message[]
+  followers          Follow[]            @relation("followedBy")
+  following          Follow[]            @relation("following")
+  groups             Group[]             @relation("GroupMembers")
+  products           Product[]
+  conversations      Conversation[]      @relation("ConversationMembers")
+  buyerTransactions  Transaction[]       @relation("buyer")
+  sellerTransactions Transaction[]       @relation("seller")
+  participatingCalls GroupCall[]  @relation("CallParticipants") 
+  groupCallId        String?
+  collaborationId    String?
 }
 
 model Session {
@@ -36,12 +48,107 @@ model Session {
 }
 
 model Verificationtoken {
-    identifier String   
-    token      String   @unique
-    expires    DateTime
-    userId     String
-    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    @@unique([identifier, token])
-    
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([identifier, token])
 }
 
+model Post {
+  id        String    @id @default(cuid())
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  members   User[]    @relation("ConversationMembers")
+  messages  Message[]
+}
+
+model Follow {
+  follower    User     @relation(name: "followedBy", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+  following   User     @relation(name: "following", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+}
+
+model Group {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  members        User[]          @relation("GroupMembers")
+  calls          GroupCall[]
+}
+
+model GroupCall {
+  id           String     @id @default(cuid())
+  callType     String
+  startTime    DateTime
+  endTime      DateTime?
+  groupId      String
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participants User[]     @relation("CallParticipants") // Define the many-to-many relationship
+}
+
+
+
+model Product {
+  id           String        @id @default(cuid())
+  name         String
+  description  String
+  price        Float
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  sellerId     String
+  seller       User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  buyerId   String
+  buyer     User     @relation("buyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId  String
+  seller    User     @relation("seller", fields: [sellerId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  amount    Float
+  createdAt DateTime @default(now())
+}
