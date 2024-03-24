@@ -7,9 +7,11 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAppSelector } from '../redux/hooks';
 
-function Navbar() {
-  const sessionToken = useAppSelector((state) => state.sessionToken.value);
 
+function Navbar({sessionToken}: { sessionToken: string}) {
+  // const sessionToken = useAppSelector((state) => state.sessionToken.value);
+  console.log("hello")
+  console.log("hello",sessionToken);
   return (
     <div className="dark:bg-white bg-black px-20">
       <nav className="flex items-center justify-between px-4 py-3">
@@ -22,7 +24,7 @@ function Navbar() {
           <ToggleTheme />
 
           <span className="mx-4 text-gray-500">|</span>
-
+          
           {sessionToken ? (
             <Avatar className="">
               <AvatarFallback>CN</AvatarFallback>

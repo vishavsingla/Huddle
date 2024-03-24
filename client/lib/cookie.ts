@@ -1,6 +1,6 @@
-import { getCookie, setCookie } from "cookies-next";
+import { getCookie, getCookies, setCookie } from "cookies-next";
 import axios from "axios";
-
+import { cookies } from 'next/headers';
 
 export const generateRefreshToken = async () => {
     try {
@@ -12,4 +12,8 @@ export const generateRefreshToken = async () => {
     } catch (error: any) {
       console.error(error);
     }
-  };
+};
+
+export const sessionToken = getCookie('sessionToken',{cookies});
+export const refreshToken = getCookie('refreshToken',{cookies});
+export const accessToken = getCookie('accessToken',{cookies});

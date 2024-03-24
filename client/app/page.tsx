@@ -1,20 +1,19 @@
 
-import { getCookie, setCookie } from "cookies-next";
+import { getCookie, getCookies, setCookie } from "cookies-next";
 import Home from "./(pages)/(home)/page";
 // import { useAppSelector } from './redux/hooks';
+import { cookies } from 'next/headers';
 
-
-export default function page() {
+function page() {
   // const storeState = useAppSelector((state) => state);
-  const i =  getCookie('sessionToken');
-  console.log("hello")
-  console.log(i);
+  const i =  getCookie('sessionToken',{cookies});
+  console.log(i)
+  // console.log(i.sessionToken);
   // const sessionToken = useAppSelector((state) => state.sessionToken.value);
   return (
     <div className="">
       <Home/>
-      {i}
-      {/* <p>{sessionToken || 'No session token set'}</p> */}
     </div>
   );
 }
+export default page

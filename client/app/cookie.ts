@@ -1,8 +1,9 @@
 
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
+// import sessionToken from "./sessionToken";
 
-export const cookieStore = cookies();
+// export const cookieStore = cookies();
 
-cookieStore.set("sessionToken", "sessionToken", { secure: true });
+// cookieStore.set("sessionToken",cookieStore.get("sessionToken"), { secure: true });
 
-// console.log(cookieStore);
+// // console.log(cookieStore);
