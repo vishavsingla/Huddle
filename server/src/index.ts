@@ -3,13 +3,14 @@ import dotenv from "dotenv";
 import AuthRouter from "./routers/AuthRouter";
 import cors from "cors";
 import { Server } from "socket.io";
+import http from "http";
 import {ServerResponse, createServer} from "http"; // Import the http module
 const port = process.env.PORT || 5001;
 
 dotenv.config();
 
 const app: Express = express();
-const httpServer = createServer(app); // Create an http.Server instance using the Express app
+const httpServer = http.createServer(app); // Create an http.Server instance using the Express app
 
 const io = new Server(httpServer, {
   cors: {

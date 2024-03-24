@@ -50,7 +50,7 @@ const signUpController = async (req: Request, res: Response): Promise<Response> 
 const loginController = async (req: Request, res: Response): Promise<Response> => {
 	try {
 		const { email, password } = req.body;
-
+0
 		const existingUser = await prisma.user.findUnique({
 			where: {
 				email,
@@ -75,6 +75,12 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 			id: existingUser.id,
 		});
 
+		const sessionToken = generateSessionToken();
+
+		res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, path:'/', });
+    	res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, path:'/', });
+    	res.cookie('sessionToken', sessionToken, { httpOnly: true, secure: false, path:'/', });
+
 		await prisma.user.update({
 			where: {
 				id: existingUser.id,
@@ -87,7 +93,7 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 
 		const session = await prisma.session.create({
 			data: {
-				sessionToken: generateSessionToken(),
+				sessionToken:sessionToken,
 				userId: existingUser.id,
 				expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
 			},
@@ -95,7 +101,7 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 
 		return res
 			.status(200)
-			.json({ message: "Login successful", accessToken, session });
+			.json({ message: "Login successful", accessToken, refreshToken, session });
 	} catch (err:any) {
 		return res
 			.status(203)

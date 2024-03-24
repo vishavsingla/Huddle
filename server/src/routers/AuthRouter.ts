@@ -17,5 +17,5 @@ router.post('/refresh-token', refreshAccessTokenController);
 router.get('/check-session/:id', checkValidSession);
 router.get('/user/:id', getUserDetails);
 
-export default router;
+export default router; 
 

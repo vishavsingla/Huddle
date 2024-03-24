@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { getCookie, setCookie } from "cookies-next";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -18,6 +19,8 @@ import { setSessionToken } from '../../../redux/sessionTokenSlice';
 
 import axios from "axios";
 
+// import { cookieStore } from "../../../cookie";
+
 export default function CardWithForm() {
     const dispatch = useDispatch();
     const router = useRouter();
@@ -27,18 +30,26 @@ export default function CardWithForm() {
 
     const handleSubmit = async (e:any) => {
         e.preventDefault();
-
+        
         try {
             const response = await axios.post("http://localhost:5000/auth/user/login", {
                 email,
                 password,
+            }, {
+                withCredentials: true,
             });
-            if(response.status!=200){
+            if(response.status!==200){
                 setError(response.data.message)
             }
             else{
+                console.log(response)
                 console.log(response.data.session)
-                dispatch(setSessionToken(response.data.session.sessionToken)); 
+                dispatch(setSessionToken(response.data.session.sessionToken));
+                // cookieStore.set('sessionToken', response.data.session.sessionToken,  { secure: true });
+                setCookie('sessionToken', response.data.session.sessionToken,  { secure: true });
+                setCookie('refreshToken', response.data.session.refreshToken,  { secure: true });
+                setCookie('accessToken', response.data.session.accessToken,  { secure: true });
+                
                 router.push("/");
                 setEmail('');
                 setError('');
