@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { Request, Response } from 'express'; // Import the Request and Response types from 'express'
 
 const prisma = new PrismaClient();
 
@@ -78,7 +79,6 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 		const sessionToken = generateSessionToken();
 
 		res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, path:'/', });
-    	res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, path:'/', });
     	res.cookie('sessionToken', sessionToken, { httpOnly: true, secure: false, path:'/', });
 
 		await prisma.user.update({
@@ -110,41 +110,53 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 };
 
 const refreshAccessTokenController = async (req: Request, res: Response): Promise<Response> => {
-	const { userId, refreshToken } = req.body;
+	const userId = (req: Request & { user?: { id: string } }, res: Response) => req.user?.id; // Assuming you have attached the user ID to req.user in the authentication middleware
 
-	if (!refreshToken) {
-		return res.status(400).json({ error: "Refresh token is required" });
+	if (!userId) {
+		return res.status(400).json({ error: 'User not authenticated' });
 	}
-
+  
 	try {
-		const decoded: any = jwt.verify(
-			refreshToken,
-			process.env.REFRESH_TOKEN_PRIVATE_KEY as string
-		);
-		const id = decoded.id;
-
-		const user = await prisma.user.findUnique({
-			where: {
-				id,
-			},
-		});
-
-		if (!user) {
-			return res.status(401).json({ error: "Invalid refresh token" });
-		}
-
-		const newAccessToken = generateAccessToken({ id });
-
-		return res.status(201).json({
-			message: "Token refreshed successfully",
-			accessToken: newAccessToken,
-		});
-	} catch (err:any) {
-		return res
-			.status(401)
-			.json({ error: "Invalid refresh token", details: err.message });
+	  const user = await prisma.user.findUnique({
+		where: {
+		  id: (req as Request & { user?: { id: string } }).user?.id,
+		},
+	  });
+  
+	if (!user) {
+		return res.status(401).json({ error: 'Invalid refresh token' });
 	}
-};
+
+	const refreshToken = user.refresh_token||"";
+
+	const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY || ""; // Provide a default value for the private key
+
+	const decoded: any = jwt.verify(refreshToken, privateKey as string);
+	const id = decoded.id;
+
+	const newAccessToken = generateAccessToken({ id });
+	const newSessionToken = generateSessionToken();
+  
+	  // Update the session with the new session token
+	  await prisma.session.updateMany({
+		where: {
+		  userId: id,
+		},
+		data: {
+		  sessionToken: newSessionToken,
+		  expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+		},
+	  });
+  
+	  return res.status(201).json({
+		message: 'Token refreshed successfully',
+		accessToken: newAccessToken,
+		sessionToken: newSessionToken,
+	  });
+	} catch (err: any) {
+	  return res.status(401).json({ error: 'Invalid refresh token', details: err.message });
+	}
+  };
 
 const logOutController = async (req: Request, res: Response): Promise<Response> => {
 	try {
@@ -157,6 +169,7 @@ const logOutController = async (req: Request, res: Response): Promise<Response> 
 				sessionToken: req.params.id,
 			},
 		});
+		
 		return res.status(200).json({ message: "Logged out successfully" });
 	} catch (e:any) {
 		return res
@@ -168,7 +181,7 @@ const logOutController = async (req: Request, res: Response): Promise<Response> 
 const generateAccessToken = (data: any): string => {
 	try {
 		const token = jwt.sign(data, process.env.ACCESS_TOKEN_PRIVATE_KEY as string, {
-			expiresIn: "1h",
+			expiresIn: "15min",
 		});
 		return token;
 	} catch (e:any) {
@@ -180,7 +193,7 @@ const generateAccessToken = (data: any): string => {
 const generateRefreshToken = (data: any): string => {
 	try {
 		const token = jwt.sign(data, process.env.REFRESH_TOKEN_PRIVATE_KEY as string, {
-			expiresIn: "1d",
+			expiresIn: "1h",
 		});
 		return token;
 	} catch (e:any) {
