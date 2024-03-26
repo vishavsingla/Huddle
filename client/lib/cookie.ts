@@ -1,6 +1,6 @@
 import { deleteCookie, getCookie, setCookie } from 'cookies-next';
 import axios from 'axios';
-
+import { cookies } from 'next/headers';
 const api = axios.create({
   baseURL: 'http://localhost:5000',
   withCredentials: true,
@@ -34,7 +34,7 @@ api.interceptors.response.use(
   }
 );
 
-const logOut = async () => {
+export const logOut = async () => {
   try {
     await api.post('/auth/logout');
     deleteCookie('accessToken');
@@ -46,5 +46,5 @@ const logOut = async () => {
 };
 
 export default api;
-export const sessionToken = getCookie('sessionToken');
-export const accessToken = getCookie('accessToken');
+export const sessionToken = getCookie('sessionToken',{cookies});
+export const accessToken = getCookie('accessToken',{cookies});

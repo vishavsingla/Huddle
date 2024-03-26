@@ -42,16 +42,10 @@ export default function CardWithForm() {
                 setError(response.data.message)
             }
             else{
-                console.log(response)
-                console.log(response.data.session)
                 dispatch(setSessionToken(response.data.session.sessionToken));
                 // cookieStore.set('sessionToken', response.data.session.sessionToken,  { secure: true });
                 setCookie('sessionToken', response.data.session.sessionToken,{ maxAge: 60 * 60 * 24 });
-                setCookie('refreshToken', response.data.refreshToken,{ maxAge: 60 * 60 * 24 });
                 setCookie('accessToken', response.data.accessToken,{ maxAge: 60 * 60 * 24 });
-
-                console.log(getCookie('sessionToken'))
-                // console.log(hasCookie('sessionToken'))
                 router.push("/");
                 setEmail('');
                 setError('');
