@@ -6,8 +6,9 @@ interface AuthenticatedRequest extends Request {
 }
 
 export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers['cookie'];
+
+  const token = authHeader && authHeader.split('accessToken=')[1];
 
   if (!token) {
     return res.status(401).json({ error: 'Access token missing' });
@@ -17,7 +18,6 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
     if (err) {
       return res.status(403).json({ error: 'Invalid access token' });
     }
-
     req.user = user;
     next();
   });

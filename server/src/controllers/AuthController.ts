@@ -110,7 +110,7 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 };
 
 const refreshAccessTokenController = async (req: Request, res: Response): Promise<Response> => {
-	const userId = (req: Request & { user?: { id: string } }, res: Response) => req.user?.id; // Assuming you have attached the user ID to req.user in the authentication middleware
+	const userId = (req: Request & { user?: { id: string } }, res: Response) => req.user?.id; 
 
 	if (!userId) {
 		return res.status(400).json({ error: 'User not authenticated' });
@@ -129,7 +129,7 @@ const refreshAccessTokenController = async (req: Request, res: Response): Promis
 
 	const refreshToken = user.refresh_token||"";
 
-	const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY || ""; // Provide a default value for the private key
+	const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY || ""; 
 
 	const decoded: any = jwt.verify(refreshToken, privateKey as string);
 	const id = decoded.id;
