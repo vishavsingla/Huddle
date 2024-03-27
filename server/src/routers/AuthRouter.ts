@@ -12,10 +12,10 @@ const router = Router();
 
 router.post('/signup', signUpController);
 router.post('/login', loginController);
-router.post('/logout/:id', authMiddleware ,logOutController);
+router.post('/logout/:id?' ,logOutController);
 router.post('/refresh-token', authMiddleware, refreshAccessTokenController);
-router.get('/check-session/:id', authMiddleware, checkValidSession);
-router.get('/user/:id', authMiddleware, getUserDetails);
+router.get('/check-session/:id?', authMiddleware, checkValidSession);
+router.get('/user/:id?', authMiddleware, getUserDetails);
 
 export default router; 
 

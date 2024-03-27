@@ -38,14 +38,12 @@ export default function CardWithForm() {
             }, {
                 withCredentials: true,
             });
+            console.log(response)
             if(response.status!==200){
                 setError(response.data.message)
             }
+            
             else{
-                dispatch(setSessionToken(response.data.session.sessionToken));
-                // cookieStore.set('sessionToken', response.data.session.sessionToken,  { secure: true });
-                setCookie('sessionToken', response.data.session.sessionToken,{ maxAge: 60 * 60 * 24 });
-                setCookie('accessToken', response.data.accessToken,{ maxAge: 60 * 60 * 24 });
                 router.push("/");
                 setEmail('');
                 setError('');

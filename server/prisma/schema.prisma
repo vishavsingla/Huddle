@@ -13,8 +13,6 @@ model User {
   email              String?             @unique
   emailVerified      DateTime?
   hashedPassword     String
-  access_token       String?
-  refresh_token      String?
   expires_at         Int?
   token_type         String?
   scope              String?
@@ -34,17 +32,20 @@ model User {
   conversations      Conversation[]      @relation("ConversationMembers")
   buyerTransactions  Transaction[]       @relation("buyer")
   sellerTransactions Transaction[]       @relation("seller")
-  participatingCalls GroupCall[]  @relation("CallParticipants") 
+  participatingCalls GroupCall[]         @relation("CallParticipants")
   groupCallId        String?
   collaborationId    String?
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String              @id @default(cuid())
+  sessionToken       String              @unique
+  userId             String
+  access_token       String?
+  refresh_token      String?
+  verificationTokens Verificationtoken[]
+  expires            DateTime
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Verificationtoken {
@@ -53,6 +54,8 @@ model Verificationtoken {
   expires    DateTime
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Session    Session? @relation(fields: [sessionId], references: [id])
+  sessionId  String?
 
   @@unique([identifier, token])
 }
@@ -108,26 +111,24 @@ model Follow {
 }
 
 model Group {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  members        User[]          @relation("GroupMembers")
-  calls          GroupCall[]
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  members     User[]      @relation("GroupMembers")
+  calls       GroupCall[]
 }
 
 model GroupCall {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   callType     String
   startTime    DateTime
   endTime      DateTime?
   groupId      String
-  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  participants User[]     @relation("CallParticipants") // Define the many-to-many relationship
+  group        Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participants User[]    @relation("CallParticipants") // Define the many-to-many relationship
 }
-
-
 
 model Product {
   id           String        @id @default(cuid())

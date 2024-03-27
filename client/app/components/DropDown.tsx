@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +18,16 @@ import {
 import { deleteCookie } from "cookies-next";
 import axios from "axios";
 
+
 export default function DropdownMenuDemo() {
-  const handleLogout = async () => {
+  const handleLogout = async (e:any) => {
+    e.preventDefault();
     try {
-      await axios.post("/auth/logout", { withCredentials: true });
-      deleteCookie("accessToken");
-      deleteCookie("sessionToken");
-      window.location.href = "/login";
+      const response = await axios.post("http://localhost:5000/auth/user/logout",{}, { withCredentials: true });
+      deleteCookie("accessToken", { path: '/'});
+      deleteCookie("sessionToken", { path: '/'});
+      
+      window.location.href = "/auth/login";
     } catch (error) {
       console.error("Error during logout:", error);
     }

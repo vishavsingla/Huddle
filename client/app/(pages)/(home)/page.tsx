@@ -1,16 +1,16 @@
 import Navbar from '@/app/components/Navbar'
 import Post from '@/app/components/Post'
-import { accessToken, sessionToken } from '@/lib/cookie'
+import { cookies } from 'next/headers';
+import { getCookie } from 'cookies-next';
 import React from 'react'
 
 export default function Home() {
-  console.log("home")
-  console.log(sessionToken)
+  const sessionToken = getCookie('sessionToken', {cookies});
   return (
     <div className='space-y-10'>
       <Navbar sessionToken={sessionToken || ''} />
       <div className="mx-20 px-20">
-        <Post avatar='Shyam' name='Shyam' createdAt=''/>
+        <Post avatar='' name='Shyam' createdAt=''/>
       </div>
     </div>
   )

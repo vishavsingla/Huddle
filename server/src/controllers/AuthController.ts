@@ -2,7 +2,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express'; // Import the Request and Response types from 'express'
+import { Request, Response } from 'express';
+import { Session } from 'inspector';
+
 
 const prisma = new PrismaClient();
 
@@ -28,7 +30,7 @@ const signUpController = async (req: Request, res: Response): Promise<Response> 
 		const user = await prisma.user.create({
 			data: { name, email, hashedPassword },
 		});
-		
+
 		const verificationToken = await prisma.verificationtoken.create({
 			data: {
 				identifier: user.email || '',
@@ -40,18 +42,18 @@ const signUpController = async (req: Request, res: Response): Promise<Response> 
 
 		return res
 			.status(200)
-			.json({ message: "User registered successfully", user, verificationToken});
-	} catch (err:any) {
+			.json({ message: "User registered successfully", user, verificationToken });
+	} catch (err: any) {
 		return res
 			.status(203)
-			.json({ message: "Internal server error", error: err.message});
+			.json({ message: "Internal server error", error: err.message });
 	}
 };
 
 const loginController = async (req: Request, res: Response): Promise<Response> => {
 	try {
 		const { email, password } = req.body;
-0
+		0
 		const existingUser = await prisma.user.findUnique({
 			where: {
 				email,
@@ -78,100 +80,105 @@ const loginController = async (req: Request, res: Response): Promise<Response> =
 
 		const sessionToken = generateSessionToken();
 
-		res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, path:'/', });
-    	res.cookie('sessionToken', sessionToken, { httpOnly: true, secure: false, path:'/', });
-
-		await prisma.user.update({
-			where: {
-				id: existingUser.id,
-			},
+		res.cookie('accessToken', accessToken, { httpOnly: true, secure: false, path: '/', });
+		res.cookie('sessionToken', sessionToken, { httpOnly: true, secure: false, path: '/', });
+		
+	
+		const full_session = await prisma.session.create({
 			data: {
 				access_token: accessToken,
 				refresh_token: refreshToken,
-			},
-		});
-
-		const session = await prisma.session.create({
-			data: {
-				sessionToken:sessionToken,
+				sessionToken: sessionToken,
 				userId: existingUser.id,
 				expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
 			},
 		});
 
+		const { refresh_token, ...session } = full_session;
+
 		return res
 			.status(200)
-			.json({ message: "Login successful", accessToken, refreshToken, session });
-	} catch (err:any) {
+			.json({ message: "Login successful", accessToken, session });
+	} catch (err: any) {
 		return res
 			.status(203)
 			.json({ message: "Internal server error", details: err.message });
 	}
 };
 
+export const extractSessionToken = (req: Request, res: Response) => {
+	const tokens = req.headers['cookie']?.split(';');
+	const session = tokens?.find(token => token.includes("sessionToken="));
+	const sessionToken = session ? session.split('=')[1] : null;
+	return sessionToken;
+};
+
 const refreshAccessTokenController = async (req: Request, res: Response): Promise<Response> => {
-	const userId = (req: Request & { user?: { id: string } }, res: Response) => req.user?.id; 
 
-	if (!userId) {
-		return res.status(400).json({ error: 'User not authenticated' });
-	}
-  
+	const sessionToken = extractSessionToken(req, res);
 	try {
-	  const user = await prisma.user.findUnique({
-		where: {
-		  id: (req as Request & { user?: { id: string } }).user?.id,
-		},
-	  });
-  
-	if (!user) {
-		return res.status(401).json({ error: 'Invalid refresh token' });
-	}
+		if (!sessionToken) return res.status(401).json({ error: "Not Logged In" });
+		const session = await prisma.session.findUnique({
+			where: {
+				sessionToken
+			}
+		})
 
-	const refreshToken = user.refresh_token||"";
+		if (!session) {
+			return res.status(401).json({ error: 'Invalid session' });
+		}
 
-	const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY || ""; 
+		const refreshToken = session.refresh_token || "";
 
-	const decoded: any = jwt.verify(refreshToken, privateKey as string);
-	const id = decoded.id;
+		const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY || "";
 
-	const newAccessToken = generateAccessToken({ id });
-	const newSessionToken = generateSessionToken();
-  
-	  // Update the session with the new session token
-	  await prisma.session.updateMany({
-		where: {
-		  userId: id,
-		},
-		data: {
-		  sessionToken: newSessionToken,
-		  expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-		},
-	  });
-  
-	  return res.status(201).json({
-		message: 'Token refreshed successfully',
-		accessToken: newAccessToken,
-		sessionToken: newSessionToken,
-	  });
+		const decoded: any = jwt.verify(refreshToken, privateKey as string);
+		const id = decoded.id;
+
+		const newAccessToken = generateAccessToken({ id });
+		const newSessionToken = generateSessionToken();
+
+		await prisma.session.updateMany({
+			where: {
+				id: sessionToken
+			},
+			data: {
+				access_token: newAccessToken,
+				sessionToken: newSessionToken,
+				expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+			},
+		});
+
+		return res.status(201).json({
+			message: 'Token refreshed successfully',
+			accessToken: newAccessToken,
+			sessionToken: newSessionToken,
+		});
 	} catch (err: any) {
-	  return res.status(401).json({ error: 'Invalid refresh token', details: err.message });
+		return res.status(401).json({ error: 'Invalid refresh token', details: err.message });
 	}
-  };
+};
 
 const logOutController = async (req: Request, res: Response): Promise<Response> => {
+	const sessionToken = extractSessionToken(req, res);
 	try {
-		if (!req.params.id) {
+		if (!sessionToken) return res.status(401).json({ error: "Not Logged In" });
+
+		if (!sessionToken) {
 			return res.status(400).json({ error: "session not available" });
 		}
 
-		await prisma.session.deleteMany({
+		await prisma.session.delete({
 			where: {
-				sessionToken: req.params.id,
+				sessionToken
 			},
 		});
-		
+
+		res.clearCookie('accessToken', {  domain:'localhost', path: '/', });
+		res.clearCookie('sessionToken', { domain:'localhost', path: '/', });
+
 		return res.status(200).json({ message: "Logged out successfully" });
-	} catch (e:any) {
+	} catch (e: any) {
 		return res
 			.status(500)
 			.json({ error: "Internal server error", details: e.message });
@@ -181,10 +188,10 @@ const logOutController = async (req: Request, res: Response): Promise<Response> 
 const generateAccessToken = (data: any): string => {
 	try {
 		const token = jwt.sign(data, process.env.ACCESS_TOKEN_PRIVATE_KEY as string, {
-			expiresIn: "15min",
+			expiresIn: "1d",
 		});
 		return token;
-	} catch (e:any) {
+	} catch (e: any) {
 		throw new Error("Failed to generate refresh token: " + e.message);
 
 	}
@@ -196,7 +203,7 @@ const generateRefreshToken = (data: any): string => {
 			expiresIn: "1h",
 		});
 		return token;
-	} catch (e:any) {
+	} catch (e: any) {
 		throw new Error("Failed to generate refresh token: " + e.message);
 	}
 };
@@ -210,35 +217,35 @@ const generateSessionToken = (): string => {
 };
 
 const checkValidSession = async (req: Request, res: Response): Promise<Response> => {
-	const sessionId  = req.params.id;
+	const sessionToken = extractSessionToken(req, res);
 	try {
+		if (!sessionToken) return res.status(401).json({ error: "Not Logged In" });
 		const thisSession = await prisma.session.findUnique({
-			where: { sessionToken:  sessionId },
+			where: { sessionToken },
 		});
-		if (thisSession) return res.status(200).json({success:"Is Logged In"});
-		return res.status(401).json({error:"Not Logged In"});
-	} catch (e:any) {
+		if (thisSession) return res.status(200).json({ success: "Is Logged In" });
+		return res.status(401).json({ error: "Not Logged In" });
+	} catch (e: any) {
 		return res.status(500).json({ error: "Session Expired", details: e.message });
 	}
 };
 
 const getUserDetails = async (req: Request, res: Response): Promise<Response> => {
-	const sessionId  = req.params.id;
+	const sessionToken = extractSessionToken(req, res);
 	try {
-		const thisSession : any = await prisma.session.findUnique({
-			where: { sessionToken:  sessionId },
+		if (!sessionToken) return res.status(401).json({ error: "Not Logged In" });
+		const thisSession: any = await prisma.session.findUnique({
+			where: { sessionToken: sessionToken },
 		});
 		const thisUser = await prisma.user.findUnique({
-			where : {
-				id: thisSession.userId
-			}
+			where: {
+				id: thisSession.userId,
+			},
 		});
-		if(thisUser)
-			return res.status(200).send(thisUser);
-		else
-			return res.status(500).json({ error: "No user found"});
-	} catch (e:any) {
-		return res.status(500).json({ error: "Session Expired", details: e.message });
+		if (thisUser) return res.status(200).send(thisUser);
+		else return res.status(500).json({ error: 'No user found' });
+	} catch (e: any) {
+		return res.status(500).json({ error: 'Session Expired', details: e.message });
 	}
 };
 

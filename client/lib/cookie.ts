@@ -34,7 +34,7 @@ api.interceptors.response.use(
   }
 );
 
-export const logOut = async () => {
+export const handleLogout = async () => {
   try {
     await api.post('/auth/logout');
     deleteCookie('accessToken');
