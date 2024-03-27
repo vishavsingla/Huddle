@@ -137,10 +137,10 @@ const refreshAccessTokenController = async (req: Request, res: Response): Promis
 
 		const newAccessToken = generateAccessToken({ id });
 		const newSessionToken = generateSessionToken();
-
+		console.log(newAccessToken)
 		await prisma.session.updateMany({
 			where: {
-				id: sessionToken
+				sessionToken: sessionToken
 			},
 			data: {
 				access_token: newAccessToken,
@@ -148,7 +148,9 @@ const refreshAccessTokenController = async (req: Request, res: Response): Promis
 				expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
 			},
 		});
-
+		res.cookie('accessToken', newAccessToken, { httpOnly: true, secure: false, path: '/', });
+		res.cookie('sessionToken', newSessionToken, { httpOnly: true, secure: false, path: '/', });
+			
 		return res.status(201).json({
 			message: 'Token refreshed successfully',
 			accessToken: newAccessToken,
@@ -188,7 +190,7 @@ const logOutController = async (req: Request, res: Response): Promise<Response> 
 const generateAccessToken = (data: any): string => {
 	try {
 		const token = jwt.sign(data, process.env.ACCESS_TOKEN_PRIVATE_KEY as string, {
-			expiresIn: "1d",
+			expiresIn: "1min",
 		});
 		return token;
 	} catch (e: any) {
@@ -200,7 +202,7 @@ const generateAccessToken = (data: any): string => {
 const generateRefreshToken = (data: any): string => {
 	try {
 		const token = jwt.sign(data, process.env.REFRESH_TOKEN_PRIVATE_KEY as string, {
-			expiresIn: "1h",
+			expiresIn: "1d",
 		});
 		return token;
 	} catch (e: any) {

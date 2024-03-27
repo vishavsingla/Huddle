@@ -20,7 +20,7 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
 
   jwt.verify(token, process.env.ACCESS_TOKEN_PRIVATE_KEY as string, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: 'Invalid access token' });
+      return res.status(200).json({ error: 'Invalid access token' });
     }
     req.user = user;
     next();

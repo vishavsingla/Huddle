@@ -33,6 +33,21 @@ export default function DropdownMenuDemo() {
     }
   };
 
+  const refreshTokens = async (e:any) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/auth/user/refresh-token', {}, { withCredentials: true });
+      const newAccessToken = response.data.accessToken;
+      const newSessionToken = response.data.sessionToken;
+      console.log('Response:', response)
+      console.log('New Access Token:', newAccessToken);
+      console.log('New Session Token:', newSessionToken);
+    } catch (err) {
+      console.error('Failed to refresh tokens:', err);
+    }
+  };
+  
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -41,10 +56,10 @@ export default function DropdownMenuDemo() {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel >My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
+          <DropdownMenuItem onClick={refreshTokens}>Profile</DropdownMenuItem>
           <DropdownMenuItem>Billing</DropdownMenuItem>
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
