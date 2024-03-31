@@ -4,6 +4,7 @@ import "./globals.css";
 import ToggleTheme from "./components/ToggleTheme";
 import { ThemeProvider } from "./components/theme-provider";
 import StoreProvider from './StoreProvider';
+import {SocketProvider} from "@/context/SockerProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,8 +30,9 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                  
+                    <SocketProvider>
                     {children}
+                    </SocketProvider>
                 </ThemeProvider>
                 </StoreProvider>
             </body>
