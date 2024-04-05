@@ -23,8 +23,9 @@ const io = new Server(httpServer, {
 io.on("connection",(socket)=>{
   console.log("User Connected", socket.id);
 
-  socket.on("message",(data)=>{
+  socket.on("event:message",(data)=>{
     console.log(data);
+    io.emit("message", JSON.stringify(data));
   })
 
   socket.on("disconnect",()=>{
